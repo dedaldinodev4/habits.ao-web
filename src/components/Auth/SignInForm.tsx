@@ -1,12 +1,13 @@
 "use client"
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import  { SignInSchema } from '@/schemas/auth'
+import { SignInSchema } from '@/schemas/auth'
 import Input from "../ui/input";
-import { ValidFieldNames } from '@/types/input-form'
+import { AuthContext } from "@/contexts/AuthContext";
 
 interface IFormLogin {
   email: string;
@@ -15,54 +16,34 @@ interface IFormLogin {
 
 export const SignInForm: React.FC = () => {
 
-  const { 
-    register, 
-    handleSubmit, 
-    formState: { errors }, 
+  const { user, signIn } = useContext(AuthContext);
+  const router = useRouter();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
     setError } = useForm<IFormLogin>({
-    resolver: zodResolver(SignInSchema),
-  })
+      resolver: zodResolver(SignInSchema),
+    })
   const [errorMessage, setErrorMessage] = useState(false)
 
   const onSubmit: SubmitHandler<IFormLogin> = async (data) => {
     setErrorMessage(false)
-    const { email, password } = data;
 
-    //const response = await axios.post("/api/form", data); // Make a POST request
-    //const { errors = {} } = response.data; // Destructure the 'errors' property from the response data
+    const response = await signIn(data);
+    const { errors = {} } = response.data
 
-    if (email && password) {
-      // const response = await new Promise(() => null);
-      // if (response instanceof Error) {
-      //   setErrorMessage(true)
-      // }
-
-      console.log(errors)
-
-      const fieldErrorMapping: Record<string, ValidFieldNames> = {
-        email: "email",
-        password: "password"
-      };
-
-      // Find the first field with an error in the response data
-      // const fieldWithError = Object.keys(fieldErrorMapping).find(
-      //   (field) => errors[field]
-      // );
-
-      // If a field with an error is found, update the form error state using setError
-      // if (fieldWithError) {
-      //   // Use the ValidFieldNames type to ensure the correct field names
-      //   setError(fieldErrorMapping[fieldWithError], {
-      //     type: "server",
-      //     message: errors[fieldWithError],
-      //   });
-      // }
-
-
-
-      alert(`Email: ${email} | Password: ${password}`);
+    if (response instanceof Error) {
+      setErrorMessage(true)
     }
+
   }
+
+  useEffect(() => {
+    if (user) {
+      router.push('/')
+    }
+  }, [])
 
 
   return (
@@ -73,7 +54,7 @@ export const SignInForm: React.FC = () => {
         </label>
         <div className="relative">
           <Input
-            name="email" 
+            name="email"
             register={register}
             type="email"
             placeholder="Endereço de Email"
@@ -107,13 +88,13 @@ export const SignInForm: React.FC = () => {
         <div className="relative">
 
           <Input
-            name="password" 
+            name="password"
             register={register}
             type="password"
             placeholder="Palavra-passe"
             error={errors.password}
           />
-          
+
           <span className="absolute right-4 top-4">
             <svg
               className="fill-current"
